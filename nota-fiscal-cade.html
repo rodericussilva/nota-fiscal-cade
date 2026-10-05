@@ -1,11 +1,61 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nota Fiscal: Cadê?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Karla:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #F3EEE2;
+    --paper-edge: #E4DCC8;
+    --ink: #22281F;
+    --ink-soft: #5A5F52;
+    --rust: #B6452F;
+    --forest: #2F6F4E;
+    --sky-top: #FFD79A;
+    --sky-bottom: #FF9F68;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: 'Karla', sans-serif;
+    color: var(--ink);
+    background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-bottom) 100%);
+    min-height: 100%;
+    padding: 28px 16px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+  .stage { width: 100%; max-width: 460px; }
+  .receipt {
+    position: relative;
+    background: var(--paper);
+    border-radius: 2px;
+    padding: 26px 24px 22px;
+    box-shadow: 0 18px 40px rgba(20,20,10,0.28);
+  }
+  h1 { font-size: 20px; margin: 4px 0 12px; }
+  .narrative { font-size: 14.5px; line-height: 1.55; }
+  .footer-note {
+    text-align: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 10.5px;
+    color: rgba(34,40,31,0.55);
+    margin-top: 14px;
+  }
+</style>
 </head>
 <body>
-    
+<div class="stage">
+  <div class="receipt">
+    <h1>Nota Fiscal: Cadê?</h1>
+    <p class="narrative">Uma jornada de escolhas e cidadania fiscal — um dia comum em Fortaleza.</p>
+  </div>
+  <div class="footer-note">protótipo — EducaJogo Fiscal · Fortaleza/CE</div>
+</div>
 </body>
 </html>
