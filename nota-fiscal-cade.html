@@ -9,84 +9,167 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Karla:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --paper: #F3EEE2;
-    --paper-edge: #E4DCC8;
-    --ink: #22281F;
-    --ink-soft: #5A5F52;
-    --rust: #B6452F;
-    --forest: #2F6F4E;
-    --sky-top: #FFD79A;
-    --sky-bottom: #FF9F68;
+    --paper: #F3EEE2; --paper-edge: #E4DCC8; --ink: #22281F; --ink-soft: #5A5F52;
+    --rust: #B6452F; --forest: #2F6F4E; --sky-top: #FFD79A; --sky-bottom: #FF9F68;
   }
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
   body {
-    font-family: 'Karla', sans-serif;
-    color: var(--ink);
+    font-family: 'Karla', sans-serif; color: var(--ink);
     background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-bottom) 100%);
-    min-height: 100%;
-    padding: 28px 16px;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
+    transition: background 1.1s ease; min-height: 100%; padding: 28px 16px;
+    display: flex; justify-content: center; align-items: flex-start;
   }
   .stage { width: 100%; max-width: 460px; }
   .daytrack { display: flex; justify-content: center; gap: 8px; margin-bottom: 14px; }
   .daytrack .dot { width: 9px; height: 9px; border-radius: 50%; background: rgba(34,40,31,0.18); }
-  .receipt {
-    position: relative;
-    background: var(--paper);
-    border-radius: 2px;
-    padding: 26px 24px 22px;
-    box-shadow: 0 18px 40px rgba(20,20,10,0.28);
-  }
-  .intro-art { font-size: 34px; margin-bottom: 10px; }
+  .daytrack .dot.active { background: var(--ink); transform: scale(1.25); }
+  .daytrack .dot.done { background: rgba(34,40,31,0.55); }
+  .receipt { position: relative; background: var(--paper); border-radius: 2px; padding: 26px 24px 22px; box-shadow: 0 18px 40px rgba(20,20,10,0.28); }
+  .meters { display: flex; justify-content: space-between; font-family: 'Space Mono', monospace; font-size: 12.5px; border-bottom: 1px dashed var(--paper-edge); padding-bottom: 12px; margin-bottom: 16px; }
+  .meter .label { color: var(--ink-soft); }
+  .meter .value { font-weight: 700; font-size: 15px; display: block; margin-top: 2px; }
+  .meter.right { text-align: right; }
+  .place { font-family: 'Space Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink-soft); margin-bottom: 6px; }
+  .time { font-weight: 700; font-size: 11px; color: var(--rust); }
   h1 { font-size: 20px; margin: 4px 0 12px; }
   .narrative { font-size: 14.5px; line-height: 1.55; margin-bottom: 10px; }
-  button.next {
-    width: 100%;
-    font-family: 'Space Mono', monospace;
-    font-size: 13px;
-    letter-spacing: 0.05em;
-    padding: 13px;
-    border-radius: 6px;
-    border: none;
-    background: var(--ink);
-    color: var(--paper);
-    cursor: pointer;
-  }
-  .footer-note {
-    text-align: center;
-    font-family: 'Space Mono', monospace;
-    font-size: 10.5px;
-    color: rgba(34,40,31,0.55);
-    margin-top: 14px;
-  }
+  .dialogue { font-size: 14px; font-style: italic; color: var(--ink-soft); border-left: 2px solid var(--paper-edge); padding-left: 12px; margin-bottom: 20px; }
+  .choices { display: flex; flex-direction: column; gap: 10px; }
+  button.choice { font-size: 14px; font-weight: 700; text-align: left; padding: 12px 14px; border-radius: 6px; border: 1.5px solid var(--ink); background: transparent; color: var(--ink); cursor: pointer; }
+  button.choice:hover { background: var(--ink); color: var(--paper); }
+  .feedback { font-size: 14px; line-height: 1.55; background: rgba(34,40,31,0.05); border-radius: 6px; padding: 13px 14px; margin-bottom: 16px; }
+  .delta { font-family: 'Space Mono', monospace; font-size: 12px; font-weight: 700; margin-bottom: 8px; display: inline-block; }
+  .delta.pos { color: var(--forest); } .delta.neg { color: var(--rust); }
+  button.next { width: 100%; font-family: 'Space Mono', monospace; font-size: 13px; padding: 13px; border-radius: 6px; border: none; background: var(--ink); color: var(--paper); cursor: pointer; }
+  .end-art { font-size: 34px; margin-bottom: 10px; }
+  .end-verdict { font-weight: 700; font-size: 15.5px; margin-bottom: 8px; }
+  .footer-note { text-align: center; font-family: 'Space Mono', monospace; font-size: 10.5px; color: rgba(34,40,31,0.55); margin-top: 14px; }
 </style>
 </head>
 <body>
 <div class="stage">
-  <div class="daytrack" id="daytrack" style="visibility:hidden;"></div>
+  <div class="daytrack" id="daytrack"></div>
   <div class="receipt" id="receipt"></div>
   <div class="footer-note">protótipo — EducaJogo Fiscal · Fortaleza/CE</div>
 </div>
 
 <script>
-const receipt = document.getElementById('receipt');
+// v1: pontuação abstrata (não representa valores reais ainda — ver fix no próximo commit)
+const SCENES = [
+  { time: "08h12", place: "Padaria do bairro", sky: ["#FFD79A", "#FF9F68"],
+    narrative: "Você passa na padaria antes da aula para comprar pão e leite. O atendente baixa a voz.",
+    dialogue: "“Não precisa de nota, né? Fica mais em conta pra você.”",
+    choices: [
+      { label: "Pedir a nota fiscal mesmo assim", tag: "consciente", deltaArrec: 8, deltaConsc: 10,
+        feedback: "Essa venda entra oficialmente no sistema — ajuda a financiar serviços públicos." },
+      { label: "Aceitar o desconto e não pedir", tag: "economia", deltaArrec: -4, deltaConsc: -6,
+        feedback: "Você economiza agora, mas essa venda 'por fora' não gera arrecadação." }
+    ]
+  },
+  { time: "12h30", place: "Restaurante self-service", sky: ["#8FC7E8", "#C9E3EE"],
+    narrative: "No almoço, o dono do restaurante oferece pular o caixa oficial.",
+    dialogue: "“Pode me mandar no PIX pessoal, fica mais rápido.”",
+    choices: [
+      { label: "Pagar no caixa, com nota", tag: "registrado", deltaArrec: 7, deltaConsc: 7,
+        feedback: "O valor é contabilizado como faturamento real do estabelecimento." },
+      { label: "Pagar no PIX pessoal do dono", tag: "mais rápido", deltaArrec: -6, deltaConsc: -7,
+        feedback: "Esse valor nunca entra no faturamento oficial do negócio." }
+    ]
+  },
+  { time: "15h00", place: "Oficina de celular", sky: ["#A7D8E8", "#E8F2EE"],
+    narrative: "Seu celular quebrou. Há um conserto informal mais barato e uma assistência registrada.",
+    dialogue: "“Faço sem nota por menos. Com nota, sai mais caro.”",
+    choices: [
+      { label: "Pagar na assistência registrada", tag: "com garantia", deltaArrec: 9, deltaConsc: 9,
+        feedback: "Você sai com nota fiscal — garantia de verdade se der problema de novo." },
+      { label: "Fazer o conserto informal", tag: "mais barato", deltaArrec: -5, deltaConsc: -4,
+        feedback: "Mais barato, mas sem nenhum documento se o serviço for malfeito." }
+    ]
+  },
+  { time: "17h10", place: "Loja de tênis no shopping", sky: ["#F4A261", "#E76F51"],
+    narrative: "Você vai comprar um tênis novo. A vendedora oferece um desconto sem nota.",
+    dialogue: "“Sem nota no seu nome, consigo um desconto.”",
+    choices: [
+      { label: "Recusar e levar a nota", tag: "compra formal", deltaArrec: 8, deltaConsc: 8,
+        feedback: "Você garante a nota fiscal — essencial pra trocar o produto." },
+      { label: "Aceitar o desconto sem nota", tag: "mais barato", deltaArrec: -7, deltaConsc: -8,
+        feedback: "A loja registra menos vendas do que realmente teve." }
+    ]
+  },
+  { time: "18h50", place: "Camelô perto do terminal", sky: ["#6D5A82", "#3E3A5E"],
+    narrative: "Um boné 'original' por um décimo do preço de loja.",
+    dialogue: "“É original, só não tenho nota.”",
+    choices: [
+      { label: "Não comprar e seguir pra loja oficial", tag: "produto original", deltaArrec: 6, deltaConsc: 9,
+        feedback: "Produtos piratas não pagam impostos nem geram nota." },
+      { label: "Comprar sem nota", tag: "preço baixo", deltaArrec: -5, deltaConsc: -9,
+        feedback: "Nenhuma etapa dessa cadeia passou pelo sistema fiscal." }
+    ]
+  }
+];
 
+let sceneIndex = 0, lastChoice = null, arrecadacao = 0, consciencia = 50;
+const receipt = document.getElementById('receipt');
+const daytrack = document.getElementById('daytrack');
+function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+function setSky(sky) { document.body.style.background = `linear-gradient(180deg, ${sky[0]} 0%, ${sky[1]} 100%)`; }
+function renderDots() {
+  daytrack.innerHTML = '';
+  for (let i = 0; i < SCENES.length; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === sceneIndex ? ' active' : (i < sceneIndex ? ' done' : ''));
+    daytrack.appendChild(d);
+  }
+}
+function metersHTML() {
+  return `<div class="meters">
+    <div class="meter"><span class="label">arrecadação</span><span class="value">R$ ${arrecadacao}</span></div>
+    <div class="meter right"><span class="label">consciência fiscal</span><span class="value">${consciencia}%</span></div>
+  </div>`;
+}
 function renderIntro() {
+  daytrack.style.visibility = 'hidden';
   receipt.innerHTML = `
-    <div class="intro-art">🧾</div>
     <h1>Nota Fiscal: Cadê?</h1>
-    <p class="narrative">Uma jornada de escolhas e cidadania fiscal — um dia comum em Fortaleza.</p>
-    <p class="narrative">Da padaria de manhã ao caminho de volta pra casa à noite, cada parada traz uma decisão de consumo.</p>
-    <button class="next" id="startBtn">COMEÇAR O DIA →</button>
-  `;
+    <p class="narrative">Uma jornada de escolhas e cidadania fiscal.</p>
+    <button class="next" id="startBtn">COMEÇAR O DIA →</button>`;
   document.getElementById('startBtn').onclick = () => {
-    receipt.innerHTML = '<p class="narrative">(cenas em desenvolvimento...)</p>';
+    daytrack.style.visibility = 'visible'; sceneIndex = 0; setSky(SCENES[0].sky); renderDots(); renderScene();
   };
 }
-
+function renderScene() {
+  const s = SCENES[sceneIndex]; setSky(s.sky); renderDots();
+  receipt.innerHTML = `${metersHTML()}
+    <div class="place">${s.place}</div><div class="time">${s.time}</div>
+    <h1 style="margin-top:8px;">${s.narrative}</h1>
+    <p class="dialogue">${s.dialogue}</p>
+    <div class="choices">${s.choices.map((c, i) => `<button class="choice" data-i="${i}"><span class="tag">${c.tag}</span>${c.label}</button>`).join('')}</div>`;
+  receipt.querySelectorAll('.choice').forEach(btn => btn.onclick = () => chooseOption(s, parseInt(btn.dataset.i)));
+}
+function chooseOption(scene, i) {
+  const c = scene.choices[i];
+  arrecadacao = Math.max(0, arrecadacao + c.deltaArrec);
+  consciencia = clamp(consciencia + c.deltaConsc, 0, 100);
+  lastChoice = c; renderFeedback();
+}
+function renderFeedback() {
+  const c = lastChoice; const isLast = sceneIndex === SCENES.length - 1;
+  receipt.innerHTML = `${metersHTML()}
+    <span class="delta ${c.deltaArrec >= 0 ? 'pos' : 'neg'}">${c.deltaArrec >= 0 ? '+' : ''}${c.deltaArrec} arrecadação · ${c.deltaConsc >= 0 ? '+' : ''}${c.deltaConsc} consciência</span>
+    <div class="feedback">${c.feedback}</div>
+    <button class="next" id="nextBtn">${isLast ? 'VER O RESULTADO DO DIA →' : 'CONTINUAR O DIA →'}</button>`;
+  document.getElementById('nextBtn').onclick = () => { isLast ? renderEnding() : (sceneIndex++, renderScene()); };
+}
+function renderEnding() {
+  daytrack.style.visibility = 'hidden'; setSky(["#1B2A4A", "#0E1630"]);
+  let verdict = consciencia >= 75 ? "Cidadão fiscal consciente" : consciencia >= 45 ? "Entre o bolso e a cidadania" : "Prioridade total pro bolso";
+  receipt.innerHTML = `<div class="end-art">🌙</div><h1>Fim do dia</h1>
+    <p class="narrative">Suas decisões geraram <strong>R$ ${arrecadacao}</strong> e consciência fiscal de <strong>${consciencia}%</strong>.</p>
+    <div class="end-verdict">${verdict}</div>
+    <button class="next" id="restartBtn">JOGAR DE NOVO</button>`;
+  document.getElementById('restartBtn').onclick = () => { sceneIndex = 0; arrecadacao = 0; consciencia = 50; renderIntro(); };
+}
 renderIntro();
 </script>
 </body>
