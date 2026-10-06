@@ -31,6 +31,8 @@
     align-items: flex-start;
   }
   .stage { width: 100%; max-width: 460px; }
+  .daytrack { display: flex; justify-content: center; gap: 8px; margin-bottom: 14px; }
+  .daytrack .dot { width: 9px; height: 9px; border-radius: 50%; background: rgba(34,40,31,0.18); }
   .receipt {
     position: relative;
     background: var(--paper);
@@ -38,8 +40,21 @@
     padding: 26px 24px 22px;
     box-shadow: 0 18px 40px rgba(20,20,10,0.28);
   }
+  .intro-art { font-size: 34px; margin-bottom: 10px; }
   h1 { font-size: 20px; margin: 4px 0 12px; }
-  .narrative { font-size: 14.5px; line-height: 1.55; }
+  .narrative { font-size: 14.5px; line-height: 1.55; margin-bottom: 10px; }
+  button.next {
+    width: 100%;
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    padding: 13px;
+    border-radius: 6px;
+    border: none;
+    background: var(--ink);
+    color: var(--paper);
+    cursor: pointer;
+  }
   .footer-note {
     text-align: center;
     font-family: 'Space Mono', monospace;
@@ -51,11 +66,28 @@
 </head>
 <body>
 <div class="stage">
-  <div class="receipt">
-    <h1>Nota Fiscal: Cadê?</h1>
-    <p class="narrative">Uma jornada de escolhas e cidadania fiscal — um dia comum em Fortaleza.</p>
-  </div>
+  <div class="daytrack" id="daytrack" style="visibility:hidden;"></div>
+  <div class="receipt" id="receipt"></div>
   <div class="footer-note">protótipo — EducaJogo Fiscal · Fortaleza/CE</div>
 </div>
+
+<script>
+const receipt = document.getElementById('receipt');
+
+function renderIntro() {
+  receipt.innerHTML = `
+    <div class="intro-art">🧾</div>
+    <h1>Nota Fiscal: Cadê?</h1>
+    <p class="narrative">Uma jornada de escolhas e cidadania fiscal — um dia comum em Fortaleza.</p>
+    <p class="narrative">Da padaria de manhã ao caminho de volta pra casa à noite, cada parada traz uma decisão de consumo.</p>
+    <button class="next" id="startBtn">COMEÇAR O DIA →</button>
+  `;
+  document.getElementById('startBtn').onclick = () => {
+    receipt.innerHTML = '<p class="narrative">(cenas em desenvolvimento...)</p>';
+  };
+}
+
+renderIntro();
+</script>
 </body>
 </html>
