@@ -38,12 +38,23 @@
   .choices { display: flex; flex-direction: column; gap: 10px; }
   button.choice { font-size: 14px; font-weight: 700; text-align: left; padding: 12px 14px; border-radius: 6px; border: 1.5px solid var(--ink); background: transparent; color: var(--ink); cursor: pointer; }
   button.choice:hover { background: var(--ink); color: var(--paper); }
+  .nota-box { font-family: 'Space Mono', monospace; font-size: 12px; background: #fff; border: 1px dashed var(--paper-edge); border-radius: 4px; padding: 14px; margin-bottom: 14px; }
+  .nota-box.informal { background: rgba(182,69,47,0.06); border-color: rgba(182,69,47,0.35); }
+  .nota-item { display:flex; justify-content: space-between; padding: 3px 0; }
+  .nota-rule { border-top: 1px dashed var(--paper-edge); margin: 8px 0; }
+  .nota-total { display:flex; justify-content: space-between; font-weight:700; font-size: 13px; }
+  .nota-tax { display:flex; justify-content: space-between; font-size: 11.5px; color: var(--ink-soft); padding-top: 2px; }
   .feedback { font-size: 14px; line-height: 1.55; background: rgba(34,40,31,0.05); border-radius: 6px; padding: 13px 14px; margin-bottom: 16px; }
   .delta { font-family: 'Space Mono', monospace; font-size: 12px; font-weight: 700; margin-bottom: 8px; display: inline-block; }
   .delta.pos { color: var(--forest); } .delta.neg { color: var(--rust); }
   button.next { width: 100%; font-family: 'Space Mono', monospace; font-size: 13px; padding: 13px; border-radius: 6px; border: none; background: var(--ink); color: var(--paper); cursor: pointer; }
   .end-art { font-size: 34px; margin-bottom: 10px; }
   .end-verdict { font-weight: 700; font-size: 15.5px; margin-bottom: 8px; }
+  .consolidada { font-family: 'Space Mono', monospace; font-size: 11.5px; background: #fff; border: 1px dashed var(--paper-edge); border-radius: 4px; padding: 14px; margin: 14px 0; }
+  .consolidada .linha { display:flex; justify-content:space-between; padding: 3px 0; }
+  .consolidada .linha.fora { color: rgba(34,40,31,0.4); text-decoration: line-through; }
+  .consolidada .scene-label { font-size: 9.5px; text-transform: uppercase; color: var(--ink-soft); margin: 8px 0 2px; }
+  .consolidada .grand-total { display:flex; justify-content:space-between; font-size: 14px; font-weight:700; border-top: 1px dashed var(--paper-edge); margin-top:10px; padding-top: 8px; color: var(--forest); }
   .footer-note { text-align: center; font-family: 'Space Mono', monospace; font-size: 10.5px; color: rgba(34,40,31,0.55); margin-top: 14px; }
 </style>
 </head>
@@ -55,61 +66,74 @@
 </div>
 
 <script>
-// v1: pontuação abstrata (não representa valores reais ainda — ver fix no próximo commit)
+function brl(v) { return v.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}); }
+function round2(v) { return Math.round(v * 100) / 100; }
+
+// v3: itens detalhados por cena + alíquota por tipo de operação (ICMS produto / ISS serviço)
 const SCENES = [
-  { time: "08h12", place: "Padaria do bairro", sky: ["#FFD79A", "#FF9F68"],
-    narrative: "Você passa na padaria antes da aula para comprar pão e leite. O atendente baixa a voz.",
+  { time: "08h12", place: "Padaria do bairro", sky: ["#FFD79A", "#FF9F68"], taxLabel: "ICMS", taxRate: 0.20,
+    narrative: "Você passa na padaria para comprar pão e leite. O atendente baixa a voz.",
     dialogue: "“Não precisa de nota, né? Fica mais em conta pra você.”",
     choices: [
-      { label: "Pedir a nota fiscal mesmo assim", tag: "consciente", deltaArrec: 8, deltaConsc: 10,
-        feedback: "Essa venda entra oficialmente no sistema — ajuda a financiar serviços públicos." },
-      { label: "Aceitar o desconto e não pedir", tag: "economia", deltaArrec: -4, deltaConsc: -6,
-        feedback: "Você economiza agora, mas essa venda 'por fora' não gera arrecadação." }
+      { label: "Pedir a nota fiscal mesmo assim", tag: "com nota", formal: true,
+        items: [ {nome: "Pão francês (1kg)", valor: 12.00}, {nome: "Leite integral (1L)", valor: 6.00} ],
+        feedback: "Essa venda de R$ 18,00 entra oficialmente no sistema." },
+      { label: "Aceitar o desconto e não pedir", tag: "sem nota", formal: false,
+        items: [ {nome: "Pão francês (1kg)", valor: 10.00}, {nome: "Leite integral (1L)", valor: 5.00} ],
+        feedback: "Você paga menos agora, mas gera R$ 0,00 em imposto registrado." }
     ]
   },
-  { time: "12h30", place: "Restaurante self-service", sky: ["#8FC7E8", "#C9E3EE"],
+  { time: "12h30", place: "Restaurante self-service", sky: ["#8FC7E8", "#C9E3EE"], taxLabel: "ICMS", taxRate: 0.20,
     narrative: "No almoço, o dono do restaurante oferece pular o caixa oficial.",
     dialogue: "“Pode me mandar no PIX pessoal, fica mais rápido.”",
     choices: [
-      { label: "Pagar no caixa, com nota", tag: "registrado", deltaArrec: 7, deltaConsc: 7,
-        feedback: "O valor é contabilizado como faturamento real do estabelecimento." },
-      { label: "Pagar no PIX pessoal do dono", tag: "mais rápido", deltaArrec: -6, deltaConsc: -7,
-        feedback: "Esse valor nunca entra no faturamento oficial do negócio." }
+      { label: "Pedir para pagar no caixa, com nota", tag: "com nota", formal: true,
+        items: [ {nome: "Prato por quilo (0,450kg)", valor: 33.00}, {nome: "Suco natural", valor: 8.00} ],
+        feedback: "O valor pago é o mesmo, mas vira faturamento real do estabelecimento." },
+      { label: "Pagar no PIX pessoal do dono", tag: "sem nota", formal: false,
+        items: [ {nome: "Prato por quilo (0,450kg)", valor: 33.00}, {nome: "Suco natural", valor: 8.00} ],
+        feedback: "Esse valor nunca entra no faturamento oficial do restaurante." }
     ]
   },
-  { time: "15h00", place: "Oficina de celular", sky: ["#A7D8E8", "#E8F2EE"],
-    narrative: "Seu celular quebrou. Há um conserto informal mais barato e uma assistência registrada.",
+  { time: "15h00", place: "Oficina de celular", sky: ["#A7D8E8", "#E8F2EE"], taxLabel: "ISS", taxRate: 0.05,
+    narrative: "Seu celular quebrou. Conserto informal por R$ 80 ou assistência registrada por R$ 110.",
     dialogue: "“Faço sem nota por menos. Com nota, sai mais caro.”",
     choices: [
-      { label: "Pagar na assistência registrada", tag: "com garantia", deltaArrec: 9, deltaConsc: 9,
-        feedback: "Você sai com nota fiscal — garantia de verdade se der problema de novo." },
-      { label: "Fazer o conserto informal", tag: "mais barato", deltaArrec: -5, deltaConsc: -4,
-        feedback: "Mais barato, mas sem nenhum documento se o serviço for malfeito." }
+      { label: "Pagar na assistência registrada", tag: "com nota", formal: true,
+        items: [ {nome: "Troca de tela (serviço técnico)", valor: 110.00} ],
+        feedback: "Gera ISS sobre o serviço — e sai com nota fiscal, garantia de verdade." },
+      { label: "Fazer o conserto informal", tag: "sem nota", formal: false,
+        items: [ {nome: "Troca de tela (sem nota)", valor: 80.00} ],
+        feedback: "Mais barato, mas nenhum ISS registrado nem documento de garantia." }
     ]
   },
-  { time: "17h10", place: "Loja de tênis no shopping", sky: ["#F4A261", "#E76F51"],
+  { time: "17h10", place: "Loja de tênis no shopping", sky: ["#F4A261", "#E76F51"], taxLabel: "ICMS", taxRate: 0.20,
     narrative: "Você vai comprar um tênis novo. A vendedora oferece um desconto sem nota.",
     dialogue: "“Sem nota no seu nome, consigo um desconto.”",
     choices: [
-      { label: "Recusar e levar a nota", tag: "compra formal", deltaArrec: 8, deltaConsc: 8,
-        feedback: "Você garante a nota fiscal — essencial pra trocar o produto." },
-      { label: "Aceitar o desconto sem nota", tag: "mais barato", deltaArrec: -7, deltaConsc: -8,
+      { label: "Recusar e levar a nota", tag: "com nota", formal: true,
+        items: [ {nome: "Tênis esportivo", valor: 260.00}, {nome: "Par de meias esportivas", valor: 20.00} ],
+        feedback: "A compra gera imposto registrado e garante a nota fiscal." },
+      { label: "Aceitar o desconto sem nota", tag: "sem nota", formal: false,
+        items: [ {nome: "Tênis esportivo (sem nota)", valor: 234.00}, {nome: "Par de meias (sem nota)", valor: 18.00} ],
         feedback: "A loja registra menos vendas do que realmente teve." }
     ]
   },
-  { time: "18h50", place: "Camelô perto do terminal", sky: ["#6D5A82", "#3E3A5E"],
+  { time: "18h50", place: "Camelô perto do terminal", sky: ["#6D5A82", "#3E3A5E"], taxLabel: "ICMS", taxRate: 0.20,
     narrative: "Um boné 'original' por um décimo do preço de loja.",
     dialogue: "“É original, só não tenho nota.”",
     choices: [
-      { label: "Não comprar e seguir pra loja oficial", tag: "produto original", deltaArrec: 6, deltaConsc: 9,
-        feedback: "Produtos piratas não pagam impostos nem geram nota." },
-      { label: "Comprar sem nota", tag: "preço baixo", deltaArrec: -5, deltaConsc: -9,
+      { label: "Não comprar e seguir pra loja oficial", tag: "sem compra hoje", formal: null, items: [],
+        feedback: "Nenhum imposto é gerado hoje — mas nenhum prejuízo também." },
+      { label: "Comprar sem nota", tag: "sem nota", formal: false,
+        items: [ {nome: "Boné (vendedor ambulante, sem nota)", valor: 25.00} ],
         feedback: "Nenhuma etapa dessa cadeia passou pelo sistema fiscal." }
     ]
   }
 ];
 
-let sceneIndex = 0, lastChoice = null, arrecadacao = 0, consciencia = 50;
+const DELTAS_CONSC = [[10,-6],[7,-7],[9,-4],[8,-8],[9,-9]];
+let sceneIndex = 0, lastChoice = null, totalImposto = 0, totalGasto = 0, consciencia = 50, historico = [];
 const receipt = document.getElementById('receipt');
 const daytrack = document.getElementById('daytrack');
 function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
@@ -124,51 +148,75 @@ function renderDots() {
 }
 function metersHTML() {
   return `<div class="meters">
-    <div class="meter"><span class="label">arrecadação</span><span class="value">R$ ${arrecadacao}</span></div>
+    <div class="meter"><span class="label">imposto gerado hoje</span><span class="value">R$ ${brl(totalImposto)}</span></div>
     <div class="meter right"><span class="label">consciência fiscal</span><span class="value">${consciencia}%</span></div>
+  </div>`;
+}
+function notaHTML(scene, choice) {
+  const subtotal = round2(choice.items.reduce((s, it) => s + it.valor, 0));
+  if (choice.items.length === 0) return `<div class="nota-box informal">NENHUMA COMPRA REALIZADA</div>`;
+  if (!choice.formal) {
+    return `<div class="nota-box informal">
+      ${choice.items.map(it => `<div class="nota-item"><span>${it.nome}</span><span>R$ ${brl(it.valor)}</span></div>`).join('')}
+      <div class="nota-rule"></div>
+      <div class="nota-total"><span>TOTAL PAGO</span><span>R$ ${brl(subtotal)}</span></div>
+      <div class="nota-tax"><span>Tributos registrados</span><span>R$ 0,00</span></div>
+    </div>`;
+  }
+  const imposto = round2(subtotal * scene.taxRate);
+  return `<div class="nota-box">
+    ${choice.items.map(it => `<div class="nota-item"><span>${it.nome}</span><span>R$ ${brl(it.valor)}</span></div>`).join('')}
+    <div class="nota-rule"></div>
+    <div class="nota-total"><span>TOTAL A PAGAR</span><span>R$ ${brl(subtotal)}</span></div>
+    <div class="nota-tax"><span>Valor aprox. tributos (${scene.taxLabel}, ${(scene.taxRate*100).toFixed(0)}%)</span><span>R$ ${brl(imposto)}</span></div>
   </div>`;
 }
 function renderIntro() {
   daytrack.style.visibility = 'hidden';
-  receipt.innerHTML = `
-    <h1>Nota Fiscal: Cadê?</h1>
-    <p class="narrative">Uma jornada de escolhas e cidadania fiscal.</p>
+  receipt.innerHTML = `<h1>Nota Fiscal: Cadê?</h1><p class="narrative">Uma jornada de escolhas e cidadania fiscal.</p>
     <button class="next" id="startBtn">COMEÇAR O DIA →</button>`;
-  document.getElementById('startBtn').onclick = () => {
-    daytrack.style.visibility = 'visible'; sceneIndex = 0; setSky(SCENES[0].sky); renderDots(); renderScene();
-  };
+  document.getElementById('startBtn').onclick = () => { daytrack.style.visibility = 'visible'; sceneIndex = 0; setSky(SCENES[0].sky); renderDots(); renderScene(); };
 }
 function renderScene() {
   const s = SCENES[sceneIndex]; setSky(s.sky); renderDots();
-  receipt.innerHTML = `${metersHTML()}
-    <div class="place">${s.place}</div><div class="time">${s.time}</div>
-    <h1 style="margin-top:8px;">${s.narrative}</h1>
-    <p class="dialogue">${s.dialogue}</p>
-    <div class="choices">${s.choices.map((c, i) => `<button class="choice" data-i="${i}"><span class="tag">${c.tag}</span>${c.label}</button>`).join('')}</div>`;
+  receipt.innerHTML = `${metersHTML()}<div class="place">${s.place}</div><div class="time">${s.time}</div>
+    <h1 style="margin-top:8px;">${s.narrative}</h1><p class="dialogue">${s.dialogue}</p>
+    <div class="choices">${s.choices.map((c, i) => `<button class="choice" data-i="${i}"><span>${c.tag}</span>${c.label}</button>`).join('')}</div>`;
   receipt.querySelectorAll('.choice').forEach(btn => btn.onclick = () => chooseOption(s, parseInt(btn.dataset.i)));
 }
 function chooseOption(scene, i) {
   const c = scene.choices[i];
-  arrecadacao = Math.max(0, arrecadacao + c.deltaArrec);
-  consciencia = clamp(consciencia + c.deltaConsc, 0, 100);
-  lastChoice = c; renderFeedback();
+  const subtotal = round2(c.items.reduce((s, it) => s + it.valor, 0));
+  const imposto = c.formal ? round2(subtotal * scene.taxRate) : 0;
+  totalImposto = round2(totalImposto + imposto); totalGasto = round2(totalGasto + subtotal);
+  const [up, down] = DELTAS_CONSC[sceneIndex];
+  consciencia = clamp(consciencia + (c.formal === false ? down : (c.formal === true ? up : Math.round(up*0.7))), 0, 100);
+  historico.push({ place: scene.place, items: c.items, subtotal, imposto, formal: c.formal });
+  lastChoice = c; renderFeedback(scene, c, imposto);
 }
-function renderFeedback() {
-  const c = lastChoice; const isLast = sceneIndex === SCENES.length - 1;
-  receipt.innerHTML = `${metersHTML()}
-    <span class="delta ${c.deltaArrec >= 0 ? 'pos' : 'neg'}">${c.deltaArrec >= 0 ? '+' : ''}${c.deltaArrec} arrecadação · ${c.deltaConsc >= 0 ? '+' : ''}${c.deltaConsc} consciência</span>
+function renderFeedback(scene, c, imposto) {
+  const isLast = sceneIndex === SCENES.length - 1;
+  receipt.innerHTML = `${metersHTML()}${notaHTML(scene, c)}
+    <span class="delta ${imposto > 0 ? 'pos' : 'neg'}">${imposto > 0 ? '+R$ ' + brl(imposto) + ' de imposto' : 'R$ 0,00 de imposto'}</span>
     <div class="feedback">${c.feedback}</div>
-    <button class="next" id="nextBtn">${isLast ? 'VER O RESULTADO DO DIA →' : 'CONTINUAR O DIA →'}</button>`;
+    <button class="next" id="nextBtn">${isLast ? 'VER A NOTA CONSOLIDADA →' : 'CONTINUAR O DIA →'}</button>`;
   document.getElementById('nextBtn').onclick = () => { isLast ? renderEnding() : (sceneIndex++, renderScene()); };
 }
 function renderEnding() {
   daytrack.style.visibility = 'hidden'; setSky(["#1B2A4A", "#0E1630"]);
   let verdict = consciencia >= 75 ? "Cidadão fiscal consciente" : consciencia >= 45 ? "Entre o bolso e a cidadania" : "Prioridade total pro bolso";
+  const linhas = historico.map(h => {
+    if (h.items.length === 0) return `<div class="scene-label">${h.place}</div><div class="linha"><span>— nenhuma compra —</span><span>R$ 0,00</span></div>`;
+    const itemLines = h.items.map(it => `<div class="linha${h.formal ? '' : ' fora'}"><span>${it.nome}</span><span>R$ ${brl(it.valor)}</span></div>`).join('');
+    const impLine = h.formal ? `<div class="linha"><span>↳ imposto recolhido</span><span>R$ ${brl(h.imposto)}</span></div>` : `<div class="linha fora"><span>↳ sem nota — R$ 0,00</span><span></span></div>`;
+    return `<div class="scene-label">${h.place}</div>${itemLines}${impLine}`;
+  }).join('');
   receipt.innerHTML = `<div class="end-art">🌙</div><h1>Fim do dia</h1>
-    <p class="narrative">Suas decisões geraram <strong>R$ ${arrecadacao}</strong> e consciência fiscal de <strong>${consciencia}%</strong>.</p>
+    <p class="narrative">Em R$ ${brl(totalGasto)} gastos, suas escolhas geraram <strong>R$ ${brl(totalImposto)}</strong> em imposto.</p>
     <div class="end-verdict">${verdict}</div>
+    <div class="consolidada">${linhas}<div class="grand-total"><span>TOTAL ARRECADADO</span><span>R$ ${brl(totalImposto)}</span></div></div>
     <button class="next" id="restartBtn">JOGAR DE NOVO</button>`;
-  document.getElementById('restartBtn').onclick = () => { sceneIndex = 0; arrecadacao = 0; consciencia = 50; renderIntro(); };
+  document.getElementById('restartBtn').onclick = () => { sceneIndex = 0; totalImposto = 0; totalGasto = 0; consciencia = 50; historico = []; renderIntro(); };
 }
 renderIntro();
 </script>
