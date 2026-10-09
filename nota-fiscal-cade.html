@@ -9,52 +9,130 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Karla:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --paper: #F3EEE2; --paper-edge: #E4DCC8; --ink: #22281F; --ink-soft: #5A5F52;
-    --rust: #B6452F; --forest: #2F6F4E; --sky-top: #FFD79A; --sky-bottom: #FF9F68;
+    --paper: #F3EEE2;
+    --paper-edge: #E4DCC8;
+    --ink: #22281F;
+    --ink-soft: #5A5F52;
+    --rust: #B6452F;
+    --forest: #2F6F4E;
+    --gold: #B9872F;
+    --sky-top: #FFD79A;
+    --sky-bottom: #FF9F68;
   }
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
   body {
-    font-family: 'Karla', sans-serif; color: var(--ink);
+    font-family: 'Karla', sans-serif;
+    color: var(--ink);
     background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-bottom) 100%);
-    transition: background 1.1s ease; min-height: 100%; padding: 28px 16px;
-    display: flex; justify-content: center; align-items: flex-start;
+    transition: background 1.1s ease;
+    min-height: 100%;
+    padding: calc(28px + env(safe-area-inset-top, 0px)) 16px calc(28px + env(safe-area-inset-bottom, 0px));
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
   }
   .stage { width: 100%; max-width: 460px; }
   .daytrack { display: flex; justify-content: center; gap: 8px; margin-bottom: 14px; }
-  .daytrack .dot { width: 9px; height: 9px; border-radius: 50%; background: rgba(34,40,31,0.18); }
+  .daytrack .dot { width: 9px; height: 9px; border-radius: 50%; background: rgba(34,40,31,0.18); transition: background 0.3s ease, transform 0.3s ease; }
   .daytrack .dot.active { background: var(--ink); transform: scale(1.25); }
   .daytrack .dot.done { background: rgba(34,40,31,0.55); }
-  .receipt { position: relative; background: var(--paper); border-radius: 2px; padding: 26px 24px 22px; box-shadow: 0 18px 40px rgba(20,20,10,0.28); }
-  .meters { display: flex; justify-content: space-between; font-family: 'Space Mono', monospace; font-size: 12.5px; border-bottom: 1px dashed var(--paper-edge); padding-bottom: 12px; margin-bottom: 16px; }
+
+  .receipt {
+    position: relative;
+    background: var(--paper);
+    border-radius: 2px;
+    padding: 26px 24px 22px;
+    box-shadow: 0 18px 40px rgba(20,20,10,0.28);
+    overflow: hidden;
+  }
+  .receipt::before, .receipt::after {
+    content: ""; position: absolute; left: 0; right: 0; height: 10px;
+    background-size: 20px 10px; transition: background-color 1.1s ease;
+  }
+  .receipt::before { top: -5px; background-image: radial-gradient(circle at 10px 5px, transparent 5px, var(--sky-top) 5.5px); }
+  .receipt::after { bottom: -5px; background-image: radial-gradient(circle at 10px 5px, transparent 5px, var(--sky-bottom) 5.5px); }
+
+  .meters {
+    display: flex; justify-content: space-between;
+    font-family: 'Space Mono', monospace; font-size: 12.5px; letter-spacing: 0.02em;
+    border-bottom: 1px dashed var(--paper-edge); padding-bottom: 12px; margin-bottom: 16px;
+  }
+  .meter { text-align: left; }
   .meter .label { color: var(--ink-soft); }
   .meter .value { font-weight: 700; font-size: 15px; display: block; margin-top: 2px; }
   .meter.right { text-align: right; }
+
   .place { font-family: 'Space Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink-soft); margin-bottom: 6px; }
   .time { font-weight: 700; font-size: 11px; color: var(--rust); }
-  h1 { font-size: 20px; margin: 4px 0 12px; }
+  h1 { font-family: 'Karla', sans-serif; font-size: 20px; line-height: 1.3; margin: 4px 0 12px; }
   .narrative { font-size: 14.5px; line-height: 1.55; margin-bottom: 10px; }
   .dialogue { font-size: 14px; font-style: italic; color: var(--ink-soft); border-left: 2px solid var(--paper-edge); padding-left: 12px; margin-bottom: 20px; }
+
   .choices { display: flex; flex-direction: column; gap: 10px; }
-  button.choice { font-size: 14px; font-weight: 700; text-align: left; padding: 12px 14px; border-radius: 6px; border: 1.5px solid var(--ink); background: transparent; color: var(--ink); cursor: pointer; }
+  button.choice {
+    font-family: 'Karla', sans-serif; font-size: 14px; font-weight: 700; text-align: left;
+    padding: 12px 14px; border-radius: 6px; border: 1.5px solid var(--ink);
+    background: transparent; color: var(--ink); cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+  }
   button.choice:hover { background: var(--ink); color: var(--paper); }
-  .nota-box { font-family: 'Space Mono', monospace; font-size: 12px; background: #fff; border: 1px dashed var(--paper-edge); border-radius: 4px; padding: 14px; margin-bottom: 14px; }
+  button.choice:active { transform: scale(0.98); }
+  button.choice .tag { display: block; font-family: 'Space Mono', monospace; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.6; margin-bottom: 3px; }
+
+  .nota-box {
+    font-family: 'Space Mono', monospace;
+    font-size: 11.5px;
+    background: #fff;
+    border: 1px dashed var(--paper-edge);
+    border-radius: 4px;
+    padding: 14px 14px 12px;
+    margin-bottom: 14px;
+    line-height: 1.5;
+  }
   .nota-box.informal { background: rgba(182,69,47,0.06); border-color: rgba(182,69,47,0.35); }
-  .nota-item { display:flex; justify-content: space-between; padding: 3px 0; }
+  .nota-head { text-align:center; margin-bottom: 8px; }
+  .nota-head .loja { font-weight: 700; font-size: 13px; }
+  .nota-head .meta { font-size: 10px; color: var(--ink-soft); }
+  .nota-head .selo { display:inline-block; margin-top:4px; font-size:10px; letter-spacing:0.08em; font-weight:700; color: var(--forest); }
+  .nota-box.informal .nota-head .selo { color: var(--rust); }
   .nota-rule { border-top: 1px dashed var(--paper-edge); margin: 8px 0; }
-  .nota-total { display:flex; justify-content: space-between; font-weight:700; font-size: 13px; }
-  .nota-tax { display:flex; justify-content: space-between; font-size: 11.5px; color: var(--ink-soft); padding-top: 2px; }
+  .nota-cols { display:flex; justify-content: space-between; font-size: 9.5px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.03em; }
+  .nota-item { display:flex; justify-content: space-between; gap: 10px; padding: 3px 0 3px; }
+  .nota-item .nome { color: var(--ink); }
+  .nota-item .cod { display:block; font-size: 9.5px; color: var(--ink-soft); }
+  .nota-item .valor { white-space: nowrap; }
+  .nota-total { display:flex; justify-content: space-between; font-weight:700; font-size: 13px; padding: 2px 0; }
+  .nota-tribsec-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-soft); margin-top:4px; }
+  .nota-trib-line { display:flex; justify-content: space-between; font-size: 11px; padding: 1px 0; }
+  .nota-foot { font-size: 9px; color: var(--ink-soft); margin-top: 8px; line-height: 1.4; }
+  .nota-informal-msg { font-size: 12.5px; color: var(--rust); font-weight: 700; margin-bottom: 6px; text-align:center; }
+
   .feedback { font-size: 14px; line-height: 1.55; background: rgba(34,40,31,0.05); border-radius: 6px; padding: 13px 14px; margin-bottom: 16px; }
   .delta { font-family: 'Space Mono', monospace; font-size: 12px; font-weight: 700; margin-bottom: 8px; display: inline-block; }
-  .delta.pos { color: var(--forest); } .delta.neg { color: var(--rust); }
-  button.next { width: 100%; font-family: 'Space Mono', monospace; font-size: 13px; padding: 13px; border-radius: 6px; border: none; background: var(--ink); color: var(--paper); cursor: pointer; }
-  .end-art { font-size: 34px; margin-bottom: 10px; }
+  .delta.pos { color: var(--forest); }
+  .delta.neg { color: var(--rust); }
+
+  button.next { width: 100%; font-family: 'Space Mono', monospace; font-size: 13px; letter-spacing: 0.05em; padding: 13px; border-radius: 6px; border: none; background: var(--ink); color: var(--paper); cursor: pointer; }
+  button.next:active { transform: scale(0.98); }
+
+  .intro-art, .end-art { font-size: 34px; margin-bottom: 10px; }
+
+  .end-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 16px 0; }
+  .end-stat { background: rgba(34,40,31,0.05); border-radius: 6px; padding: 10px 8px; text-align: center; }
+  .end-stat .icon { font-size: 20px; margin-bottom: 4px; }
+  .end-stat .label { font-family: 'Space Mono', monospace; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-soft); }
+  .end-stat .bar-track { height: 5px; background: var(--paper-edge); border-radius: 3px; margin-top: 7px; overflow: hidden; }
+  .end-stat .bar-fill { height: 100%; background: var(--forest); border-radius: 3px; transition: width 0.8s ease; }
+
   .end-verdict { font-weight: 700; font-size: 15.5px; margin-bottom: 8px; }
-  .consolidada { font-family: 'Space Mono', monospace; font-size: 11.5px; background: #fff; border: 1px dashed var(--paper-edge); border-radius: 4px; padding: 14px; margin: 14px 0; }
-  .consolidada .linha { display:flex; justify-content:space-between; padding: 3px 0; }
+  .consolidada { font-family: 'Space Mono', monospace; font-size: 11px; background: #fff; border: 1px dashed var(--paper-edge); border-radius: 4px; padding: 14px; margin: 14px 0; }
+  .consolidada .linha { display:flex; justify-content:space-between; padding: 2px 0; }
   .consolidada .linha.fora { color: rgba(34,40,31,0.4); text-decoration: line-through; }
-  .consolidada .scene-label { font-size: 9.5px; text-transform: uppercase; color: var(--ink-soft); margin: 8px 0 2px; }
+  .consolidada .scene-label { font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); margin: 8px 0 2px; }
+  .consolidada .trib-resumo { margin-top: 10px; border-top: 1px dashed var(--paper-edge); padding-top: 8px; }
   .consolidada .grand-total { display:flex; justify-content:space-between; font-size: 14px; font-weight:700; border-top: 1px dashed var(--paper-edge); margin-top:10px; padding-top: 8px; color: var(--forest); }
+
   .footer-note { text-align: center; font-family: 'Space Mono', monospace; font-size: 10.5px; color: rgba(34,40,31,0.55); margin-top: 14px; }
 </style>
 </head>
@@ -69,155 +147,335 @@
 function brl(v) { return v.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}); }
 function round2(v) { return Math.round(v * 100) / 100; }
 
-// v3: itens detalhados por cena + alíquota por tipo de operação (ICMS produto / ISS serviço)
+// Percentuais ilustrativos, inspirados na metodologia do IBPT (Lei 12.741/2012):
+// carga tributária aproximada dividida em federal (PIS/COFINS/IPI), estadual (ICMS) e municipal (ISS).
+// Valores de referência, não tabela oficial consultada produto a produto.
 const SCENES = [
-  { time: "08h12", place: "Padaria do bairro", sky: ["#FFD79A", "#FF9F68"], taxLabel: "ICMS", taxRate: 0.20,
-    narrative: "Você passa na padaria para comprar pão e leite. O atendente baixa a voz.",
-    dialogue: "“Não precisa de nota, né? Fica mais em conta pra você.”",
+  {
+    time: "08h12", place: "Padaria do bairro", sky: ["#FFD79A", "#FF9F68"],
+    store: { nome: "Padaria Bom Dia Ltda", cnpj: "08.441.223/0001-77", endereco: "Av. Dom Luís, 1200, Aldeota, Fortaleza, CE", fone: "(85)3233-4410" },
+    trib: { federal: 0.1508, estadual: 0.3015, municipal: 0 },
+    narrative: "Você passa na padaria antes da aula para comprar o pão e o leite de casa. No caixa, o atendente conta o troco e baixa a voz.",
+    dialogue: "“Não precisa de nota, né? Assim sai mais em conta pra você.”",
     choices: [
-      { label: "Pedir a nota fiscal mesmo assim", tag: "com nota", formal: true,
-        items: [ {nome: "Pão francês (1kg)", valor: 12.00}, {nome: "Leite integral (1L)", valor: 6.00} ],
-        feedback: "Essa venda de R$ 18,00 entra oficialmente no sistema." },
-      { label: "Aceitar o desconto e não pedir", tag: "sem nota", formal: false,
+      {
+        label: "Pedir a nota fiscal mesmo assim", tag: "com nota", formal: true,
+        items: [ {nome: "Pão francês (1kg)", cod: "7891234500012", valor: 12.00}, {nome: "Leite integral (1L)", cod: "7891234500029", valor: 6.00} ],
+        feedback: "Essa venda de R$ 18,00 entra oficialmente no sistema. É esse tipo de registro, somado a milhares de outros, que vira recurso para saúde e educação no seu município."
+      },
+      {
+        label: "Aceitar o desconto e não pedir", tag: "sem nota", formal: false,
         items: [ {nome: "Pão francês (1kg)", valor: 10.00}, {nome: "Leite integral (1L)", valor: 5.00} ],
-        feedback: "Você paga menos agora, mas gera R$ 0,00 em imposto registrado." }
+        feedback: "Você paga R$ 3,00 a menos agora — mas essa venda “por fora” gera R$ 0,00 em imposto registrado. O dinheiro que poderia virar atendimento num posto de saúde nunca chega a existir oficialmente."
+      }
     ]
   },
-  { time: "12h30", place: "Restaurante self-service", sky: ["#8FC7E8", "#C9E3EE"], taxLabel: "ICMS", taxRate: 0.20,
-    narrative: "No almoço, o dono do restaurante oferece pular o caixa oficial.",
-    dialogue: "“Pode me mandar no PIX pessoal, fica mais rápido.”",
+  {
+    time: "12h30", place: "Restaurante self-service", sky: ["#8FC7E8", "#C9E3EE"],
+    store: { nome: "Restaurante Sabor Caseiro Ltda", cnpj: "11.556.998/0001-02", endereco: "R. Padre Valdevino, 500, Centro, Fortaleza, CE", fone: "(85)3101-2244" },
+    trib: { federal: 0.10, estadual: 0.18, municipal: 0 },
+    narrative: "No almoço, você vai num restaurante por quilo perto da escola com um amigo. Na hora de pagar, o dono oferece uma forma de pular o caixa oficial.",
+    dialogue: "“Pode me mandar no PIX pessoal, fica mais rápido e eu nem cobro a taxinha da maquininha.”",
     choices: [
-      { label: "Pedir para pagar no caixa, com nota", tag: "com nota", formal: true,
+      {
+        label: "Pedir para pagar no caixa, com nota", tag: "com nota", formal: true,
+        items: [ {nome: "Prato por quilo (0,450kg)", cod: "2000000123", valor: 33.00}, {nome: "Suco natural", cod: "2000000456", valor: 8.00} ],
+        feedback: "O valor pago é o mesmo R$ 41,00, mas passando pelo caixa oficial ele vira faturamento real do restaurante — é a partir daí que se calcula o imposto que o negócio deve recolher."
+      },
+      {
+        label: "Pagar no PIX pessoal do dono", tag: "sem nota", formal: false,
         items: [ {nome: "Prato por quilo (0,450kg)", valor: 33.00}, {nome: "Suco natural", valor: 8.00} ],
-        feedback: "O valor pago é o mesmo, mas vira faturamento real do estabelecimento." },
-      { label: "Pagar no PIX pessoal do dono", tag: "sem nota", formal: false,
-        items: [ {nome: "Prato por quilo (0,450kg)", valor: 33.00}, {nome: "Suco natural", valor: 8.00} ],
-        feedback: "Esse valor nunca entra no faturamento oficial do restaurante." }
+        feedback: "Você paga exatamente o mesmo valor — mas ele nunca entra no faturamento oficial do restaurante. Para o fisco, essa venda de R$ 41,00 simplesmente não aconteceu."
+      }
     ]
   },
-  { time: "15h00", place: "Oficina de celular", sky: ["#A7D8E8", "#E8F2EE"], taxLabel: "ISS", taxRate: 0.05,
-    narrative: "Seu celular quebrou. Conserto informal por R$ 80 ou assistência registrada por R$ 110.",
-    dialogue: "“Faço sem nota por menos. Com nota, sai mais caro.”",
+  {
+    time: "15h00", place: "Oficina de celular", sky: ["#A7D8E8", "#E8F2EE"],
+    store: { nome: "CellFix Assistência Técnica Ltda", cnpj: "22.887.112/0001-39", endereco: "Av. Santos Dumont, 3000, Aldeota, Fortaleza, CE", fone: "(85)3268-5521" },
+    trib: { federal: 0.14, estadual: 0, municipal: 0.05 },
+    narrative: "Seu celular caiu e a tela trincou. Você acha duas opções pertinho de casa: um conserto informal, mais barato, e uma assistência registrada.",
+    dialogue: "“Faço sem nota por R$ 80. Com nota, a assistência ali na esquina cobra R$ 110.”",
     choices: [
-      { label: "Pagar na assistência registrada", tag: "com nota", formal: true,
-        items: [ {nome: "Troca de tela (serviço técnico)", valor: 110.00} ],
-        feedback: "Gera ISS sobre o serviço — e sai com nota fiscal, garantia de verdade." },
-      { label: "Fazer o conserto informal", tag: "sem nota", formal: false,
+      {
+        label: "Pagar na assistência registrada", tag: "com nota", formal: true,
+        items: [ {nome: "Troca de tela (serviço técnico)", cod: "SERV-TELA-01", valor: 110.00} ],
+        feedback: "Você paga R$ 30 a mais, mas gera ISS sobre o serviço — e sai com nota fiscal, ou seja, garantia de verdade se a tela der problema de novo."
+      },
+      {
+        label: "Fazer o conserto informal por R$ 80", tag: "sem nota", formal: false,
         items: [ {nome: "Troca de tela (sem nota)", valor: 80.00} ],
-        feedback: "Mais barato, mas nenhum ISS registrado nem documento de garantia." }
+        feedback: "Você economizou R$ 30, mas não gerou nenhum ISS registrado nem tem documento se o serviço for malfeito. Multiplicado por milhares de consertos informais, é um setor inteiro fora do radar fiscal."
+      }
     ]
   },
-  { time: "17h10", place: "Loja de tênis no shopping", sky: ["#F4A261", "#E76F51"], taxLabel: "ICMS", taxRate: 0.20,
-    narrative: "Você vai comprar um tênis novo. A vendedora oferece um desconto sem nota.",
-    dialogue: "“Sem nota no seu nome, consigo um desconto.”",
+  {
+    time: "17h10", place: "Loja de tênis no shopping", sky: ["#F4A261", "#E76F51"],
+    store: { nome: "SportLine Calçados Ltda", cnpj: "33.221.004/0001-85", endereco: "Av. Washington Soares, 85, Edson Queiroz, Fortaleza, CE", fone: "(85)3295-7788" },
+    trib: { federal: 0.12, estadual: 0.19, municipal: 0 },
+    narrative: "Você vai comprar um tênis novo no shopping. No caixa, a vendedora comenta baixinho sobre uma forma de reduzir o valor.",
+    dialogue: "“Se eu lançar como ‘consumo próprio’ sem nota no seu nome, consigo te dar 10% de desconto.”",
     choices: [
-      { label: "Recusar e levar a nota", tag: "com nota", formal: true,
-        items: [ {nome: "Tênis esportivo", valor: 260.00}, {nome: "Par de meias esportivas", valor: 20.00} ],
-        feedback: "A compra gera imposto registrado e garante a nota fiscal." },
-      { label: "Aceitar o desconto sem nota", tag: "sem nota", formal: false,
+      {
+        label: "Recusar e levar a nota no seu nome", tag: "com nota", formal: true,
+        items: [ {nome: "Tênis esportivo", cod: "7896541230017", valor: 260.00}, {nome: "Par de meias esportivas", cod: "7896541230024", valor: 20.00} ],
+        feedback: "Você paga o valor cheio, mas a compra de R$ 280,00 gera imposto registrado — e garante a nota fiscal, essencial se precisar trocar o produto ou reclamar de defeito."
+      },
+      {
+        label: "Aceitar os 10% de desconto sem nota", tag: "sem nota", formal: false,
         items: [ {nome: "Tênis esportivo (sem nota)", valor: 234.00}, {nome: "Par de meias (sem nota)", valor: 18.00} ],
-        feedback: "A loja registra menos vendas do que realmente teve." }
+        feedback: "Você economizou R$ 28,00, mas ajudou a loja a registrar menos vendas do que realmente teve — R$ 0,00 em imposto dessa compra, e nenhuma garantia formal pra você."
+      }
     ]
   },
-  { time: "18h50", place: "Camelô perto do terminal", sky: ["#6D5A82", "#3E3A5E"], taxLabel: "ICMS", taxRate: 0.20,
-    narrative: "Um boné 'original' por um décimo do preço de loja.",
-    dialogue: "“É original, só não tenho nota.”",
+  {
+    time: "18h50", place: "Perto do terminal de ônibus", sky: ["#6D5A82", "#3E3A5E"],
+    store: null,
+    trib: { federal: 0.12, estadual: 0.19, municipal: 0 },
+    narrative: "Voltando pra casa pelo terminal, você passa pela banca de um camelô. Tem um boné parecido com o de uma marca famosa, por um décimo do preço de loja.",
+    dialogue: "“É original, só não tenho nota porque é peça de importação direta.”",
     choices: [
-      { label: "Não comprar e seguir pra loja oficial", tag: "sem compra hoje", formal: null, items: [],
-        feedback: "Nenhum imposto é gerado hoje — mas nenhum prejuízo também." },
-      { label: "Comprar sem nota", tag: "sem nota", formal: false,
+      {
+        label: "Não comprar e seguir pra loja oficial outro dia", tag: "sem compra hoje", formal: null,
+        items: [],
+        feedback: "Nenhum imposto é gerado hoje — mas nenhum prejuízo também. Produtos piratas não pagam impostos de importação nem geram nota, e essa cadeia inteira opera na informalidade, com risco pro próprio consumidor."
+      },
+      {
+        label: "Comprar o boné 'original' sem nota", tag: "sem nota", formal: false,
         items: [ {nome: "Boné (vendedor ambulante, sem nota)", valor: 25.00} ],
-        feedback: "Nenhuma etapa dessa cadeia passou pelo sistema fiscal." }
+        feedback: "O preço baixo tem um motivo: nenhuma etapa dessa cadeia — importação, venda — passou pelo sistema fiscal. Mesmo pagando R$ 25,00, R$ 0,00 vira imposto registrado."
+      }
     ]
   }
 ];
 
 const DELTAS_CONSC = [[10,-6],[7,-7],[9,-4],[8,-8],[9,-9]];
-let sceneIndex = 0, lastChoice = null, totalImposto = 0, totalGasto = 0, consciencia = 50, historico = [];
+
+let sceneIndex = 0;
+let lastChoice = null;
+let totImp = { federal: 0, estadual: 0, municipal: 0 };
+let totalGasto = 0;
+let consciencia = 50;
+let historico = []; // { place, store, items, subtotal, formal, trib:{federal,estadual,municipal} }
+
 const receipt = document.getElementById('receipt');
 const daytrack = document.getElementById('daytrack');
 function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
-function setSky(sky) { document.body.style.background = `linear-gradient(180deg, ${sky[0]} 0%, ${sky[1]} 100%)`; }
+function totalImpostoDe(t) { return round2(t.federal + t.estadual + t.municipal); }
+
+function setSky(sky) {
+  document.body.style.background = `linear-gradient(180deg, ${sky[0]} 0%, ${sky[1]} 100%)`;
+  document.documentElement.style.setProperty('--sky-top', sky[0]);
+  document.documentElement.style.setProperty('--sky-bottom', sky[1]);
+}
+
 function renderDots() {
   daytrack.innerHTML = '';
   for (let i = 0; i < SCENES.length; i++) {
     const d = document.createElement('div');
-    d.className = 'dot' + (i === sceneIndex ? ' active' : (i < sceneIndex ? ' done' : ''));
+    d.className = 'dot' + (i === sceneIndex && sceneIndex < SCENES.length ? ' active' : (i < sceneIndex ? ' done' : ''));
     daytrack.appendChild(d);
   }
 }
+
 function metersHTML() {
-  return `<div class="meters">
-    <div class="meter"><span class="label">imposto gerado hoje</span><span class="value">R$ ${brl(totalImposto)}</span></div>
-    <div class="meter right"><span class="label">consciência fiscal</span><span class="value">${consciencia}%</span></div>
-  </div>`;
+  const total = totalImpostoDe(totImp);
+  return `
+    <div class="meters">
+      <div class="meter">
+        <span class="label">imposto gerado hoje</span>
+        <span class="value">R$ ${brl(total)}</span>
+      </div>
+      <div class="meter right">
+        <span class="label">consciência fiscal</span>
+        <span class="value">${consciencia}%</span>
+      </div>
+    </div>`;
 }
+
 function notaHTML(scene, choice) {
   const subtotal = round2(choice.items.reduce((s, it) => s + it.valor, 0));
-  if (choice.items.length === 0) return `<div class="nota-box informal">NENHUMA COMPRA REALIZADA</div>`;
-  if (!choice.formal) {
-    return `<div class="nota-box informal">
-      ${choice.items.map(it => `<div class="nota-item"><span>${it.nome}</span><span>R$ ${brl(it.valor)}</span></div>`).join('')}
-      <div class="nota-rule"></div>
-      <div class="nota-total"><span>TOTAL PAGO</span><span>R$ ${brl(subtotal)}</span></div>
-      <div class="nota-tax"><span>Tributos registrados</span><span>R$ 0,00</span></div>
-    </div>`;
+  if (choice.items.length === 0) {
+    return `<div class="nota-box informal"><div class="nota-informal-msg">NENHUMA COMPRA REALIZADA</div></div>`;
   }
-  const imposto = round2(subtotal * scene.taxRate);
-  return `<div class="nota-box">
-    ${choice.items.map(it => `<div class="nota-item"><span>${it.nome}</span><span>R$ ${brl(it.valor)}</span></div>`).join('')}
-    <div class="nota-rule"></div>
-    <div class="nota-total"><span>TOTAL A PAGAR</span><span>R$ ${brl(subtotal)}</span></div>
-    <div class="nota-tax"><span>Valor aprox. tributos (${scene.taxLabel}, ${(scene.taxRate*100).toFixed(0)}%)</span><span>R$ ${brl(imposto)}</span></div>
-  </div>`;
+  if (!choice.formal) {
+    return `
+      <div class="nota-box informal">
+        <div class="nota-head"><div class="loja">${scene.store ? scene.store.nome : scene.place}</div><div class="selo">SEM NOTA — VENDA NÃO REGISTRADA</div></div>
+        <div class="nota-rule"></div>
+        ${choice.items.map(it => `<div class="nota-item"><span class="nome">${it.nome}</span><span class="valor">R$ ${brl(it.valor)}</span></div>`).join('')}
+        <div class="nota-rule"></div>
+        <div class="nota-total"><span>TOTAL PAGO</span><span>R$ ${brl(subtotal)}</span></div>
+        <div class="nota-trib-line"><span>Tributos registrados</span><span>R$ 0,00</span></div>
+        <div class="nota-foot">Nenhum tributo federal, estadual ou municipal foi recolhido sobre esta operação.</div>
+      </div>`;
+  }
+  const fed = round2(subtotal * scene.trib.federal);
+  const est = round2(subtotal * scene.trib.estadual);
+  const mun = round2(subtotal * scene.trib.municipal);
+  const totTrib = round2(fed + est + mun);
+  const s = scene.store;
+  return `
+    <div class="nota-box">
+      <div class="nota-head">
+        <div class="loja">${s.nome}</div>
+        <div class="meta">CNPJ: ${s.cnpj} · ${s.endereco}<br>Fone: ${s.fone}</div>
+        <div class="selo">NFC-e · Fortaleza/CE</div>
+      </div>
+      <div class="nota-rule"></div>
+      <div class="nota-cols"><span>Código / Descrição</span><span>Vl.Total</span></div>
+      ${choice.items.map(it => `<div class="nota-item"><span class="nome">${it.nome}${it.cod ? '<span class="cod">'+it.cod+'</span>' : ''}</span><span class="valor">R$ ${brl(it.valor)}</span></div>`).join('')}
+      <div class="nota-rule"></div>
+      <div class="nota-total"><span>TOTAL A PAGAR</span><span>R$ ${brl(subtotal)}</span></div>
+      <div class="nota-tribsec-title">Informação dos Tributos Totais Incidentes (Lei Federal 12.741/2012)</div>
+      <div class="nota-trib-line"><span>Tributos federais</span><span>R$ ${brl(fed)}</span></div>
+      <div class="nota-trib-line"><span>Tributos estaduais</span><span>R$ ${brl(est)}</span></div>
+      <div class="nota-trib-line"><span>Tributos municipais</span><span>R$ ${brl(mun)}</span></div>
+      <div class="nota-trib-line" style="font-weight:700;"><span>Total aprox. de tributos</span><span>R$ ${brl(totTrib)}</span></div>
+      <div class="nota-foot">O tributo já está embutido no preço — esta seção só informa o quanto dele é imposto. Percentuais ilustrativos, inspirados na metodologia IBPT/FECOMERCIO.</div>
+    </div>`;
 }
+
 function renderIntro() {
   daytrack.style.visibility = 'hidden';
-  receipt.innerHTML = `<h1>Nota Fiscal: Cadê?</h1><p class="narrative">Uma jornada de escolhas e cidadania fiscal.</p>
-    <button class="next" id="startBtn">COMEÇAR O DIA →</button>`;
-  document.getElementById('startBtn').onclick = () => { daytrack.style.visibility = 'visible'; sceneIndex = 0; setSky(SCENES[0].sky); renderDots(); renderScene(); };
+  receipt.innerHTML = `
+    <div class="intro-art">🧾</div>
+    <h1>Nota Fiscal: Cadê?</h1>
+    <p class="narrative">Uma jornada de escolhas e cidadania fiscal — um dia comum em Fortaleza.</p>
+    <p class="narrative">Da padaria de manhã ao caminho de volta pra casa à noite, cada parada traz uma decisão de consumo. Pedir a nota custa um pouco mais na hora. Não pedir custa pro resto de todo mundo.</p>
+    <button class="next" id="startBtn">COMEÇAR O DIA →</button>
+  `;
+  document.getElementById('startBtn').onclick = () => {
+    daytrack.style.visibility = 'visible';
+    sceneIndex = 0;
+    setSky(SCENES[0].sky);
+    renderDots();
+    renderScene();
+  };
 }
+
 function renderScene() {
-  const s = SCENES[sceneIndex]; setSky(s.sky); renderDots();
-  receipt.innerHTML = `${metersHTML()}<div class="place">${s.place}</div><div class="time">${s.time}</div>
-    <h1 style="margin-top:8px;">${s.narrative}</h1><p class="dialogue">${s.dialogue}</p>
-    <div class="choices">${s.choices.map((c, i) => `<button class="choice" data-i="${i}"><span>${c.tag}</span>${c.label}</button>`).join('')}</div>`;
-  receipt.querySelectorAll('.choice').forEach(btn => btn.onclick = () => chooseOption(s, parseInt(btn.dataset.i)));
+  const s = SCENES[sceneIndex];
+  setSky(s.sky);
+  renderDots();
+  receipt.innerHTML = `
+    ${metersHTML()}
+    <div class="place">${s.place}</div>
+    <div class="time">${s.time}</div>
+    <h1 style="margin-top:8px;">${s.narrative}</h1>
+    <p class="dialogue">${s.dialogue}</p>
+    <div class="choices">
+      ${s.choices.map((c, i) => `
+        <button class="choice" data-i="${i}">
+          <span class="tag">${c.tag}</span>
+          ${c.label}
+        </button>
+      `).join('')}
+    </div>
+  `;
+  receipt.querySelectorAll('.choice').forEach(btn => {
+    btn.onclick = () => chooseOption(s, parseInt(btn.dataset.i));
+  });
 }
+
 function chooseOption(scene, i) {
   const c = scene.choices[i];
   const subtotal = round2(c.items.reduce((s, it) => s + it.valor, 0));
-  const imposto = c.formal ? round2(subtotal * scene.taxRate) : 0;
-  totalImposto = round2(totalImposto + imposto); totalGasto = round2(totalGasto + subtotal);
+  let trib = { federal: 0, estadual: 0, municipal: 0 };
+  if (c.formal) {
+    trib.federal = round2(subtotal * scene.trib.federal);
+    trib.estadual = round2(subtotal * scene.trib.estadual);
+    trib.municipal = round2(subtotal * scene.trib.municipal);
+  }
+  totImp.federal = round2(totImp.federal + trib.federal);
+  totImp.estadual = round2(totImp.estadual + trib.estadual);
+  totImp.municipal = round2(totImp.municipal + trib.municipal);
+  totalGasto = round2(totalGasto + subtotal);
   const [up, down] = DELTAS_CONSC[sceneIndex];
   consciencia = clamp(consciencia + (c.formal === false ? down : (c.formal === true ? up : Math.round(up*0.7))), 0, 100);
-  historico.push({ place: scene.place, items: c.items, subtotal, imposto, formal: c.formal });
-  lastChoice = c; renderFeedback(scene, c, imposto);
+  historico.push({ place: scene.place, store: scene.store, items: c.items, subtotal, formal: c.formal, trib });
+  lastChoice = c;
+  renderFeedback(scene, c, totalImpostoDe(trib));
 }
-function renderFeedback(scene, c, imposto) {
+
+function renderFeedback(scene, c, impostoGerado) {
   const isLast = sceneIndex === SCENES.length - 1;
-  receipt.innerHTML = `${metersHTML()}${notaHTML(scene, c)}
-    <span class="delta ${imposto > 0 ? 'pos' : 'neg'}">${imposto > 0 ? '+R$ ' + brl(imposto) + ' de imposto' : 'R$ 0,00 de imposto'}</span>
+  receipt.innerHTML = `
+    ${metersHTML()}
+    ${notaHTML(scene, c)}
+    <span class="delta ${impostoGerado > 0 ? 'pos' : 'neg'}">${impostoGerado > 0 ? '+R$ ' + brl(impostoGerado) + ' de imposto' : 'R$ 0,00 de imposto'}</span>
     <div class="feedback">${c.feedback}</div>
-    <button class="next" id="nextBtn">${isLast ? 'VER A NOTA CONSOLIDADA →' : 'CONTINUAR O DIA →'}</button>`;
-  document.getElementById('nextBtn').onclick = () => { isLast ? renderEnding() : (sceneIndex++, renderScene()); };
+    <button class="next" id="nextBtn">${isLast ? 'VER A NOTA CONSOLIDADA DO DIA →' : 'CONTINUAR O DIA →'}</button>
+  `;
+  document.getElementById('nextBtn').onclick = () => {
+    if (isLast) { renderEnding(); } else { sceneIndex++; renderScene(); }
+  };
 }
+
 function renderEnding() {
-  daytrack.style.visibility = 'hidden'; setSky(["#1B2A4A", "#0E1630"]);
-  let verdict = consciencia >= 75 ? "Cidadão fiscal consciente" : consciencia >= 45 ? "Entre o bolso e a cidadania" : "Prioridade total pro bolso";
+  daytrack.style.visibility = 'hidden';
+  setSky(["#1B2A4A", "#0E1630"]);
+
+  const totalImposto = totalImpostoDe(totImp);
+  const impostoMax = 8.10 + 11.48 + 20.90 + 86.80 + 0; // soma se todas as cenas formais fossem escolhidas
+  const perf = clamp((consciencia / 100) * 0.55 + (totalImposto / impostoMax) * 0.45, 0, 1);
+  const saude = Math.round(30 + perf * 65);
+  const educacao = Math.round(25 + perf * 70);
+  const infra = Math.round(20 + perf * 70);
+
+  let verdict, verdictText;
+  if (consciencia >= 75) {
+    verdict = "Cidadão fiscal consciente";
+    verdictText = "Na maioria das vezes você escolheu pagar um pouco mais na hora para garantir que a venda fosse registrada. Multiplicado por milhões de pessoas, esse tipo de escolha é parte real do que financia hospitais, escolas e ruas.";
+  } else if (consciencia >= 45) {
+    verdict = "Entre o bolso e a cidadania";
+    verdictText = "Você dividiu suas escolhas entre economizar na hora e contribuir formalmente. É um dilema real — mas cada venda sem nota é um pedacinho de orçamento público que deixa de existir.";
+  } else {
+    verdict = "Prioridade total pro bolso";
+    verdictText = "Você priorizou economizar em quase todas as situações. Faz sentido no dia a dia — mas é exatamente esse tipo de escolha, repetida em larga escala, que reduz o dinheiro disponível para serviços públicos.";
+  }
+
   const linhas = historico.map(h => {
-    if (h.items.length === 0) return `<div class="scene-label">${h.place}</div><div class="linha"><span>— nenhuma compra —</span><span>R$ 0,00</span></div>`;
+    if (h.items.length === 0) {
+      return `<div class="scene-label">${h.place}</div><div class="linha"><span>— nenhuma compra —</span><span>R$ 0,00</span></div>`;
+    }
     const itemLines = h.items.map(it => `<div class="linha${h.formal ? '' : ' fora'}"><span>${it.nome}</span><span>R$ ${brl(it.valor)}</span></div>`).join('');
-    const impLine = h.formal ? `<div class="linha"><span>↳ imposto recolhido</span><span>R$ ${brl(h.imposto)}</span></div>` : `<div class="linha fora"><span>↳ sem nota — R$ 0,00</span><span></span></div>`;
+    const impLine = h.formal
+      ? `<div class="linha"><span>↳ tributos (F+E+M)</span><span>R$ ${brl(totalImpostoDe(h.trib))}</span></div>`
+      : `<div class="linha fora"><span>↳ sem nota — R$ 0,00 recolhido</span><span></span></div>`;
     return `<div class="scene-label">${h.place}</div>${itemLines}${impLine}`;
   }).join('');
-  receipt.innerHTML = `<div class="end-art">🌙</div><h1>Fim do dia</h1>
-    <p class="narrative">Em R$ ${brl(totalGasto)} gastos, suas escolhas geraram <strong>R$ ${brl(totalImposto)}</strong> em imposto.</p>
+
+  receipt.innerHTML = `
+    <div class="end-art">🌙</div>
+    <h1>Fim do dia</h1>
+    <p class="narrative">Em R$ ${brl(totalGasto)} gastos ao longo do dia, suas escolhas geraram <strong>R$ ${brl(totalImposto)}</strong> em imposto recolhido — e um nível de <strong>consciência fiscal de ${consciencia}%</strong>.</p>
     <div class="end-verdict">${verdict}</div>
-    <div class="consolidada">${linhas}<div class="grand-total"><span>TOTAL ARRECADADO</span><span>R$ ${brl(totalImposto)}</span></div></div>
-    <button class="next" id="restartBtn">JOGAR DE NOVO</button>`;
-  document.getElementById('restartBtn').onclick = () => { sceneIndex = 0; totalImposto = 0; totalGasto = 0; consciencia = 50; historico = []; renderIntro(); };
+    <p class="narrative" style="font-size:13.5px;">${verdictText}</p>
+
+    <div class="consolidada">
+      ${linhas}
+      <div class="trib-resumo">
+        <div class="linha"><span>Total tributos federais</span><span>R$ ${brl(totImp.federal)}</span></div>
+        <div class="linha"><span>Total tributos estaduais</span><span>R$ ${brl(totImp.estadual)}</span></div>
+        <div class="linha"><span>Total tributos municipais</span><span>R$ ${brl(totImp.municipal)}</span></div>
+      </div>
+      <div class="grand-total"><span>TOTAL DE IMPOSTOS ARRECADADOS</span><span>R$ ${brl(totalImposto)}</span></div>
+    </div>
+
+    <div class="end-stats">
+      <div class="end-stat"><div class="icon">🏥</div><div class="label">Saúde</div><div class="bar-track"><div class="bar-fill" style="width:${saude}%"></div></div></div>
+      <div class="end-stat"><div class="icon">📚</div><div class="label">Educação</div><div class="bar-track"><div class="bar-fill" style="width:${educacao}%"></div></div></div>
+      <div class="end-stat"><div class="icon">🛣️</div><div class="label">Infraestrutura</div><div class="bar-track"><div class="bar-fill" style="width:${infra}%"></div></div></div>
+    </div>
+    <p class="narrative" style="font-size:11.5px; color:var(--ink-soft);">*Simulação didática. A quebra em tributos federais/estaduais/municipais segue o modelo real de nota fiscal brasileira (Lei 12.741/2012), mas os percentuais usados são ilustrativos — inspirados na metodologia IBPT/FECOMERCIO, não uma consulta à tabela oficial produto a produto.</p>
+    <button class="next" id="restartBtn">JOGAR DE NOVO</button>
+  `;
+  document.getElementById('restartBtn').onclick = () => {
+    sceneIndex = 0; totImp = { federal: 0, estadual: 0, municipal: 0 }; totalGasto = 0; consciencia = 50; historico = [];
+    renderIntro();
+  };
 }
+
 renderIntro();
 </script>
 </body>
