@@ -8,7 +8,7 @@ O jogador acompanha um estudante do Ensino Médio ao longo de um dia comum em Fo
 
 ## Como jogar
 
-Basta abrir o arquivo `nota-fiscal-cade.html` em qualquer navegador — não requer instalação, servidor ou dependências.
+Basta abrir o arquivo `index.html` em qualquer navegador — não requer instalação, servidor ou dependências.
 
 ## Tecnologia
 
